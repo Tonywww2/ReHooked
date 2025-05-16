@@ -110,7 +110,8 @@ public class SPlayerHookHandler implements IServerPlayerHookHandler {
 
         owner.ifPresent(player -> {
             if (!player.onGround()) {
-                player.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, 20, 0));
+                player.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, 20, 4));
+                player.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 5, 0));
             }
         });
 
@@ -120,6 +121,11 @@ public class SPlayerHookHandler implements IServerPlayerHookHandler {
     public void shootFromRotation(float xRot, float yRot) {
         // this is a response to a client request
         getOwner().ifPresent(owner -> getHookData().ifPresent(hookData -> {
+            if (!owner.onGround()) {
+                owner.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, 10, 4));
+                owner.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 5, 0));
+            }
+
             if (hooks.size() + 1 > hookData.count())
                 removeHook(hooks.get(0));
             HookEntity hookEntity = new HookEntity(owner);
@@ -158,7 +164,7 @@ public class SPlayerHookHandler implements IServerPlayerHookHandler {
             if (additional != null) additional.update();
             final boolean[] creative = {false};
 
-            if (getHookData().isEmpty()) {
+            if (getHookData().isEmpty() && lastHookType != null) {
                 removeAllHooks();
             }
 
