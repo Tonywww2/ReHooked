@@ -11,6 +11,8 @@ import com.oe.rehooked.utils.CurioUtils;
 import com.oe.rehooked.utils.PositionHelper;
 import com.oe.rehooked.utils.VectorHelper;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 
@@ -31,6 +33,8 @@ public class SPlayerHookHandler implements IServerPlayerHookHandler {
     
     private FlightHandler flightHandler;
     private IServerHandler additional;
+
+    private String lastHookType;
     
     public SPlayerHookHandler() {
         hooks = new ArrayList<>();
@@ -103,6 +107,13 @@ public class SPlayerHookHandler implements IServerPlayerHookHandler {
             hookEntity.setState(HookEntity.State.RETRACTING);
         });
         hooks.clear();
+
+        owner.ifPresent(player -> {
+            if (!player.onGround()) {
+                player.addEffect(new MobEffectInstance(MobEffects.SLOW_FALLING, 20, 0));
+            }
+        });
+
     }
 
     @Override
@@ -146,7 +157,20 @@ public class SPlayerHookHandler implements IServerPlayerHookHandler {
             flightHandler.updateFlight(owner, this);
             if (additional != null) additional.update();
             final boolean[] creative = {false};
+
+            if (getHookData().isEmpty()) {
+                removeAllHooks();
+            }
+
             getHookData().ifPresent(hookData -> {
+                if (lastHookType != null && !lastHookType.equals(hookData.type())) {
+                    removeAllHooks();
+                    lastHookType = hookData.type();
+                    return;
+                }
+
+                lastHookType = hookData.type();
+
                 if (countPulling() == 0) return;
                 owner.resetFallDistance();
                 owner.setOnGround(false);
@@ -186,6 +210,7 @@ public class SPlayerHookHandler implements IServerPlayerHookHandler {
                 if (moveVector.length() > vPT) moveVector = moveVector.normalize().scale(vPT);
                 if (moveVector.length() < THRESHOLD) moveVector = Vec3.ZERO;
             });
+
             updateMomentum();
             boolean renderParticles = creative[0] || actualPlayerPositionChange().length() > THRESHOLD;
             getHooks().forEach(hookEntity -> hookEntity.setRenderParticles(renderParticles));

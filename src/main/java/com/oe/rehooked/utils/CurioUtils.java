@@ -1,8 +1,11 @@
 package com.oe.rehooked.utils;
 
+import com.oe.rehooked.item.ReHookedItems;
 import com.oe.rehooked.item.hook.HookItem;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.util.LazyOptional;
 import top.theillusivec4.curios.api.CuriosApi;
@@ -35,9 +38,22 @@ public class CurioUtils {
     }
     
     public static Optional<String> getHookType(Player owner) {
-        return getCuriosOfType(HookItem.class, owner)
+        Optional<String> optional = getCuriosOfType(HookItem.class, owner)
                 .flatMap(CurioUtils::getIfUnique)
                 .map(ItemStack::getItem)
                 .map(item -> ((HookItem) item).getHookType());
+
+        if (optional.isEmpty()) {
+            if (owner.getItemInHand(InteractionHand.MAIN_HAND).getItem() instanceof HookItem hook) {
+                optional = Optional.of(hook.getHookType());
+
+
+            } else if (owner.getItemInHand(InteractionHand.OFF_HAND).getItem() instanceof HookItem hook) {
+                optional = Optional.of(hook.getHookType());
+
+            }
+
+        }
+        return optional;
     }
 }
